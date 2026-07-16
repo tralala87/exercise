@@ -1,0 +1,59 @@
+name: Stage2I source-equivalence bridge
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "forecasting_2/stage2i_source_bridge/**"
+      - ".github/workflows/stage2i-source-equivalence.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-source-equivalent-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.4.3"
+          use-public-rspm: true
+
+      - name: Install deterministic Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "pandas<2.3" "numpy<2.1" requests
+
+      - name: Build dual-source equivalence proof and canonical suite
+        run: |
+          python forecasting_2/stage2i_source_bridge/build_source_equivalence_suite.py \
+            --output-root stage2i_se_source_output \
+            --original-manifest forecasting_2/stage2i_source_relay/STAGE2I_PRE_VALUE_MANIFEST.json \
+            --bridge-manifest forecasting_2/stage2i_source_bridge/SOURCE_EQUIVALENCE_PRE_VALUE_MANIFEST.json \
+            --addendum forecasting_2/stage2i_source_bridge/FROZEN_STAGE2I_SOURCE_EQUIVALENCE_ADDENDUM.md \
+            --extractor forecasting_2/stage2i_source_bridge/extract_mcomp.R
+
+      - name: Show source-equivalence decision
+        if: always()
+        run: cat stage2i_se_source_output/RUN_DECISION.json
+
+      - name: Upload immutable source-equivalence result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage2i-se-canonical-source-suite
+          path: stage2i_se_source_output/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6
