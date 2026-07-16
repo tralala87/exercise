@@ -1,0 +1,59 @@
+name: Stage2J M1 source lock
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "forecasting_2/stage2j_tailsentry/**"
+      - ".github/workflows/stage2j-m1-source-lock.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lock-m1-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.4.3"
+          use-public-rspm: true
+
+      - name: Install deterministic dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "pandas<2.3" "numpy<2.1" requests
+
+      - name: Build immutable M1 source lock
+        run: |
+          python forecasting_2/stage2j_tailsentry/build_m1_source_lock_v2.py \
+            --output-root stage2j_m1_source_output \
+            --pre-value forecasting_2/stage2j_tailsentry/STAGE2J_PRE_VALUE_MANIFEST.json \
+            --spec forecasting_2/stage2j_tailsentry/FROZEN_STAGE2J_TAILSENTRY_SPEC.md \
+            --guard forecasting_2/stage2j_tailsentry/tailsentry.py \
+            --extractor forecasting_2/stage2j_tailsentry/extract_m1.R
+
+      - name: Show decision
+        if: always()
+        run: cat stage2j_m1_source_output/RUN_DECISION.json
+
+      - name: Upload immutable source lock
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage2j-m1-source-lock
+          path: stage2j_m1_source_output/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6

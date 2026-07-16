@@ -1,0 +1,51 @@
+name: Stage2I archival official adjudication
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "forecasting_2/stage2i_archival_adjudication/**"
+      - ".github/workflows/stage2i-archival-adjudication.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire-archived-official-workbook:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install workbook dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "pandas<2.3" "numpy<2.1" requests xlrd
+
+      - name: Acquire and validate archived official workbook
+        run: |
+          python forecasting_2/stage2i_archival_adjudication/retrieve_archived_official_fast.py \
+            --output-root stage2i_archival_output \
+            --manifest forecasting_2/stage2i_archival_adjudication/ARCHIVAL_OFFICIAL_PRE_VALUE_MANIFEST.json \
+            --addendum forecasting_2/stage2i_archival_adjudication/FROZEN_STAGE2I_ARCHIVAL_OFFICIAL_ADJUDICATION.md
+
+      - name: Show decision
+        if: always()
+        run: cat stage2i_archival_output/ARCHIVAL_ACQUISITION_DECISION.json
+
+      - name: Upload immutable adjudication artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage2i-archival-official-adjudication
+          path: stage2i_archival_output/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6

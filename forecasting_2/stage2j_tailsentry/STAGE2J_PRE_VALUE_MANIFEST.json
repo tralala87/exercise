@@ -1,0 +1,46 @@
+{
+  "created_utc": "2026-07-16",
+  "experiment": "Stage2J_TAILSENTRY_M1_and_fresh_synthetic_confirmation",
+  "status": "frozen before M1 source values and fresh synthetic outcomes",
+  "guard": {
+    "version": "tailsentry-q125-v1",
+    "lower_quantile": 0.125,
+    "upper_quantile": 0.875,
+    "sigma_rule": "sqrt(routed_sigma^2 + displacement^2)",
+    "candidate_count": 10
+  },
+  "development_source": "Stage2H 14-source task payloads only",
+  "closed_holdout": "Stage2I-AO M3/M4 outcomes cannot select any Stage2J rule or threshold",
+  "m1_source": {
+    "url": "https://raw.githubusercontent.com/cran/Mcomp/28f4e9babfe26607c9274c2c8d0e900a6aa61eec/data/M1.rda",
+    "repository_commit": "28f4e9babfe26607c9274c2c8d0e900a6aa61eec",
+    "expected_md5": "78a8fd28b46f657836f577b636ba70e4",
+    "package": "Mcomp",
+    "package_version": "2.8"
+  },
+  "panel": {
+    "use_all_eligible": true,
+    "maximum_context": 512,
+    "minimum_context": 32,
+    "origins_per_series": 2,
+    "maximum_internal_missing_fraction": 0.15,
+    "eligibility": "len(full)>=32+2*h after finite-span trimming and internal linear interpolation",
+    "primary_macro_unit": "M1 type"
+  },
+  "bootstrap": {
+    "seed": 202607162101,
+    "draws": 10000,
+    "hierarchy": ["type", "series_id", "origin_number"]
+  },
+  "synthetic": {
+    "tasks_per_cell": 64,
+    "seeds": [202607162201,202607162202,202607162203,202607162204,202607162205,202607162206,202607162207,202607162208]
+  },
+  "forbidden": [
+    "M1-dependent guard tuning",
+    "Stage2I-AO-dependent quantile selection",
+    "checkpoint retraining",
+    "candidate-set changes",
+    "holdout-dependent source filtering"
+  ]
+}

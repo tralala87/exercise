@@ -1,0 +1,54 @@
+{
+  "created_utc": "2026-07-16",
+  "experiment": "Stage2M_R_BRACE_ARC_fresh_Monash_holdout",
+  "forbidden_uses": [
+    "architecture tuning",
+    "interval-policy tuning",
+    "threshold tuning",
+    "source-label inference",
+    "replacement of a source after outcome inspection"
+  ],
+  "immutable_forecaster": {
+    "base_scale": 1.0,
+    "base_sigma": "moment-matched mixture variance",
+    "interval_policy": "ARC non-shrinking replay expansion",
+    "maximum_scale": 1.5,
+    "minimum_scale": 1.0,
+    "point_mean": "0.5 * CAPE_R1S_R + 0.5 * seasonal_naive",
+    "replay_statistic": "q70 of legal pseudo-future normalized absolute residual",
+    "shrinkage_pseudocount": 64,
+    "source_identity_feature": false
+  },
+  "parent_pre_value_manifest_sha256": "fb4989c9c0a782a771a61f32daaea1129bb5c9aeb76647c84a1e3808a78767ce",
+  "planned": {
+    "cohorts": 6,
+    "series": 180,
+    "tasks": 360
+  },
+  "repair": {
+    "model_policy_metric_gate_changes": "none",
+    "reason": "all 2674 source series have length 51; frozen minimum is 56",
+    "removed": "CarParts",
+    "replacement": "Electricity_Weekly",
+    "selection_basis": "source metadata feasibility only; no prediction/outcome access"
+  },
+  "selection": {
+    "context_cap": 512,
+    "horizon": "TSF series-level forecast_horizon when present, otherwise global TSF horizon, otherwise frozen frequency default",
+    "maximum_missing_fraction_after_finite_span_trim": 0.15,
+    "minimum_context": 32,
+    "origins_per_series": 2,
+    "rank": "smallest SHA256(cohort::series_id)",
+    "target_series_per_cohort": 30
+  },
+  "source_feasibility_addendum_sha256": "3e1f8afcdf39bc9311dc3c56af002fe9edce4b4078dc21e6a54fedbeddbb78f4",
+  "sources": {
+    "CIF2016": "https://zenodo.org/record/4656042/files/cif_2016_dataset.zip",
+    "Electricity_Weekly": "https://zenodo.org/record/4656141/files/electricity_weekly_dataset.zip",
+    "Hospital": "https://zenodo.org/record/4656014/files/hospital_dataset.zip",
+    "NN5_Daily": "https://zenodo.org/record/4656117/files/nn5_daily_dataset_without_missing_values.zip",
+    "NN5_Weekly": "https://zenodo.org/record/4656125/files/nn5_weekly_dataset.zip",
+    "Solar_Weekly": "https://zenodo.org/record/4656151/files/solar_weekly_dataset.zip"
+  },
+  "status": "frozen before Electricity_Weekly source bytes are downloaded; five retained source suites already locked; no model predictions or outcomes exist"
+}

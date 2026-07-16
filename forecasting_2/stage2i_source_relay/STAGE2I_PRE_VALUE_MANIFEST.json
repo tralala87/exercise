@@ -1,0 +1,102 @@
+{
+  "context_cap": 512,
+  "created_utc": "2026-07-15",
+  "datasetsforecast_version": "1.0.0",
+  "experiment": "Stage2I_SPLICE_SENTRY_canonical_data_lock",
+  "forbidden_uses": [
+    "architecture tuning",
+    "threshold tuning",
+    "interval calibration",
+    "source-label inference feature"
+  ],
+  "groups": {
+    "M3_Monthly": {
+      "benchmark": "M3",
+      "frequency": 12,
+      "group": "Monthly",
+      "horizon": 18,
+      "target_series": 35
+    },
+    "M3_Other": {
+      "benchmark": "M3",
+      "frequency": 1,
+      "group": "Other",
+      "horizon": 8,
+      "target_series": 35
+    },
+    "M3_Quarterly": {
+      "benchmark": "M3",
+      "frequency": 4,
+      "group": "Quarterly",
+      "horizon": 8,
+      "target_series": 35
+    },
+    "M3_Yearly": {
+      "benchmark": "M3",
+      "frequency": 1,
+      "group": "Yearly",
+      "horizon": 6,
+      "target_series": 35
+    },
+    "M4_Daily": {
+      "benchmark": "M4",
+      "frequency": 1,
+      "group": "Daily",
+      "horizon": 14,
+      "target_series": 35
+    },
+    "M4_Hourly": {
+      "benchmark": "M4",
+      "frequency": 24,
+      "group": "Hourly",
+      "horizon": 48,
+      "target_series": 35
+    },
+    "M4_Monthly": {
+      "benchmark": "M4",
+      "frequency": 12,
+      "group": "Monthly",
+      "horizon": 18,
+      "target_series": 35
+    },
+    "M4_Quarterly": {
+      "benchmark": "M4",
+      "frequency": 4,
+      "group": "Quarterly",
+      "horizon": 8,
+      "target_series": 35
+    },
+    "M4_Weekly": {
+      "benchmark": "M4",
+      "frequency": 1,
+      "group": "Weekly",
+      "horizon": 13,
+      "target_series": 35
+    },
+    "M4_Yearly": {
+      "benchmark": "M4",
+      "frequency": 1,
+      "group": "Yearly",
+      "horizon": 6,
+      "target_series": 35
+    }
+  },
+  "minimums": {
+    "datasets": 10,
+    "series": 250,
+    "tasks": 500
+  },
+  "origins": 2,
+  "planned": {
+    "datasets": 10,
+    "series": 350,
+    "tasks": 700
+  },
+  "selection_rule": "trim finite span; interpolate internal gaps; <=15% missing; length >=32+2H; choose smallest SHA256(dataset::series_id)",
+  "source_urls": {
+    "M3": "https://forecasters.org/data/m3comp/M3C.xls",
+    "M4_base": "https://raw.githubusercontent.com/Mcompetitions/M4-methods/master/Dataset/",
+    "M4_info": "https://raw.githubusercontent.com/Mcompetitions/M4-methods/master/Dataset/M4-info.csv"
+  },
+  "status": "frozen before source values are downloaded"
+}

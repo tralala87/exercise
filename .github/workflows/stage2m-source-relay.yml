@@ -1,0 +1,46 @@
+name: Stage2M fresh Monash source relay
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "forecasting_2/stage2m_source_relay/**"
+      - ".github/workflows/stage2m-source-relay.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-source-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deterministic dependency
+        run: python -m pip install "requests==2.32.5"
+
+      - name: Download and freeze exact TSF sources
+        run: |
+          python forecasting_2/stage2m_source_relay/build_source_suite.py \
+            forecasting_2/stage2m_source_relay/STAGE2M_PRE_VALUE_MANIFEST.json \
+            stage2m_source_output
+
+      - name: Show decision
+        run: cat stage2m_source_output/RUN_DECISION.json
+
+      - name: Upload immutable source suite
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage2m-fresh-monash-source-suite
+          path: stage2m_source_output/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 6

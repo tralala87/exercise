@@ -1,0 +1,1 @@
+Trigger the corrected Stage2J M1 source-lock workflow after the hash constants were aligned with the frozen pre-value manifest, specification, and guard. No forecasting artifact or threshold is changed.
