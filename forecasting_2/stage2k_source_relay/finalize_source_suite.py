@@ -3,8 +3,10 @@ from __future__ import annotations
 import hashlib
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 EXPECTED_MD5 = {
@@ -47,6 +49,28 @@ def main() -> None:
         ('M1', 'YEARLY'), ('M1', 'QUARTERLY'), ('M1', 'MONTHLY'),
         ('Tourism', 'YEARLY'), ('Tourism', 'QUARTERLY'), ('Tourism', 'MONTHLY'),
     }
+
+    expected_rows = int(metadata.total_length.sum())
+    observed_rows = 0
+    all_values_finite = True
+    observed_counts: Counter[tuple[str, str]] = Counter()
+    required_columns = {'benchmark', 'series_id', 'position', 'value'}
+    for chunk in pd.read_csv(values_path, chunksize=200_000):
+        if not required_columns.issubset(chunk.columns):
+            raise RuntimeError(f'value export columns missing: {required_columns - set(chunk.columns)}')
+        observed_rows += len(chunk)
+        all_values_finite &= bool(np.isfinite(pd.to_numeric(chunk.value, errors='coerce')).all())
+        counts = chunk.groupby(['benchmark', 'series_id'], sort=False).size()
+        for key, value in counts.items():
+            observed_counts[(str(key[0]), str(key[1]))] += int(value)
+    expected_counts = {
+        (str(row.benchmark), str(row.series_id)): int(row.total_length)
+        for row in metadata.itertuples(index=False)
+    }
+    checks['gzip_complete_and_row_count_exact'] = observed_rows == expected_rows
+    checks['all_values_finite'] = all_values_finite
+    checks['per_series_lengths_exact'] = observed_counts == expected_counts
+
     if not all(checks.values()):
         raise RuntimeError(f'validation failed: {checks}')
     files = {}
@@ -65,20 +89,18 @@ def main() -> None:
             'Tourism': 1311,
             'total': 2312,
         },
+        'value_rows': observed_rows,
         'required_periods': ['YEARLY', 'QUARTERLY', 'MONTHLY'],
         'checks': checks,
         'files': files,
     }
     (root / 'SOURCE_SUITE_MANIFEST.json').write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n')
-    manifest['files']['SOURCE_SUITE_MANIFEST.json'] = {
-        'sha256': digest(root / 'SOURCE_SUITE_MANIFEST.json'),
-        'size_bytes': (root / 'SOURCE_SUITE_MANIFEST.json').stat().st_size,
-    }
     decision = {
         'decision': 'SOURCE_SUITE_READY',
         'checks_passed': sum(checks.values()),
         'checks_total': len(checks),
         'metadata_rows': len(metadata),
+        'value_rows': observed_rows,
         'values_sha256': digest(values_path),
         'metadata_sha256': digest(metadata_path),
         'manifest_sha256': digest(root / 'SOURCE_SUITE_MANIFEST.json'),
