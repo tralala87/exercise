@@ -1,0 +1,36 @@
+{
+  "created_utc": "2026-07-16",
+  "experiment": "Stage2I_SA_M3_single_conflict_adjudication",
+  "status": "frozen before third-source access",
+  "original_manifest_sha256": "977f3db34bdd9e45940190858889494a1bfa19d6af2e4f3d7ab3984f30cb64a9",
+  "exact_source_failure_artifact_sha256": "6e9ff1c04a65e5144258c14705c3e323f78916f2b6480ea92a4d8913f5a0c355",
+  "dual_source_artifact_sha256": "4f3029a01f3aea462f939eff28838ece839284a6889be791eb8e6ed789cab4be",
+  "known_conflict": {
+    "group": "Monthly",
+    "canonical_series_id": "M1385",
+    "zero_based_position": 83,
+    "cran_mcomp_value": 1200.0,
+    "zenodo_tsf_value": -1200.0
+  },
+  "official_url_variants": [
+    "https://forecasters.org/data/m3comp/M3C.xls",
+    "http://forecasters.org/data/m3comp/M3C.xls",
+    "https://www.forecasters.org/data/m3comp/M3C.xls",
+    "http://www.forecasters.org/data/m3comp/M3C.xls"
+  ],
+  "archive_index": "https://web.archive.org/cdx/search/cdx",
+  "archive_replay_template": "https://web.archive.org/web/{timestamp}id_/{original}",
+  "acceptance": {
+    "expected_sheets": ["M3Year", "M3Quart", "M3Month", "M3Other"],
+    "expected_counts": {"M3Year": 645, "M3Quart": 756, "M3Month": 1428, "M3Other": 174},
+    "expected_horizons": {"M3Year": 6, "M3Quart": 8, "M3Month": 18, "M3Other": 8},
+    "require_all_distinct_archived_digests_to_agree": true,
+    "require_no_undeclared_semantic_mismatch": true
+  },
+  "forbidden": [
+    "choosing a source using forecast accuracy",
+    "changing any model or route after seeing the adjudicated value",
+    "third-source fallback outside the frozen archive hierarchy",
+    "silently relabeling the original exact URL gate as passed"
+  ]
+}
