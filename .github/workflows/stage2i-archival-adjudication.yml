@@ -14,7 +14,7 @@ permissions:
 jobs:
   acquire-archived-official-workbook:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
 
       - name: Acquire and validate archived official workbook
         run: |
-          python forecasting_2/stage2i_archival_adjudication/retrieve_archived_official.py \
+          python forecasting_2/stage2i_archival_adjudication/retrieve_archived_official_fast.py \
             --output-root stage2i_archival_output \
             --manifest forecasting_2/stage2i_archival_adjudication/ARCHIVAL_OFFICIAL_PRE_VALUE_MANIFEST.json \
             --addendum forecasting_2/stage2i_archival_adjudication/FROZEN_STAGE2I_ARCHIVAL_OFFICIAL_ADJUDICATION.md
