@@ -9,7 +9,7 @@ import pandas as pd
 
 EXPECTED_MD5 = {
     'M1.rda': '78a8fd28b46f657836f577b636ba70e4',
-    'tourism.rda': '4cb8e6288b0dd6897c05d7e8be389d59',
+    'tourism.rda': '431f57effb90c94f9029ab50c8471646',
 }
 SOURCE_URLS = {
     'M1.rda': 'https://raw.githubusercontent.com/cran/Mcomp/28f4e9babfe26607c9274c2c8d0e900a6aa61eec/data/M1.rda',
