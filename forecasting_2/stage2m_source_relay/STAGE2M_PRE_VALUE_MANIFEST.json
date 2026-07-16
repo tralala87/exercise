@@ -1,0 +1,45 @@
+{
+  "created_utc": "2026-07-16",
+  "experiment": "Stage2M_BRACE_ARC_fresh_Monash_holdout",
+  "status": "frozen before source bytes are downloaded",
+  "immutable_forecaster": {
+    "point_mean": "0.5 * CAPE_R1S_R + 0.5 * seasonal_naive",
+    "base_sigma": "moment-matched mixture variance",
+    "interval_policy": "ARC non-shrinking replay expansion",
+    "base_scale": 1.0,
+    "replay_statistic": "q70 of legal pseudo-future normalized absolute residual",
+    "shrinkage_pseudocount": 64,
+    "maximum_scale": 1.5,
+    "minimum_scale": 1.0,
+    "source_identity_feature": false
+  },
+  "sources": {
+    "CIF2016": "https://zenodo.org/record/4656042/files/cif_2016_dataset.zip",
+    "NN5_Daily": "https://zenodo.org/record/4656117/files/nn5_daily_dataset_without_missing_values.zip",
+    "NN5_Weekly": "https://zenodo.org/record/4656125/files/nn5_weekly_dataset.zip",
+    "Hospital": "https://zenodo.org/record/4656014/files/hospital_dataset.zip",
+    "CarParts": "https://zenodo.org/record/4656021/files/car_parts_dataset_without_missing_values.zip",
+    "Solar_Weekly": "https://zenodo.org/record/4656151/files/solar_weekly_dataset.zip"
+  },
+  "selection": {
+    "target_series_per_cohort": 30,
+    "origins_per_series": 2,
+    "context_cap": 512,
+    "minimum_context": 32,
+    "maximum_missing_fraction_after_finite_span_trim": 0.15,
+    "rank": "smallest SHA256(cohort::series_id)",
+    "horizon": "TSF series-level forecast_horizon when present, otherwise global TSF horizon, otherwise frozen frequency default"
+  },
+  "planned": {
+    "cohorts": 6,
+    "series": 180,
+    "tasks": 360
+  },
+  "forbidden_uses": [
+    "architecture tuning",
+    "interval-policy tuning",
+    "threshold tuning",
+    "source-label inference",
+    "replacement of a source after outcome inspection"
+  ]
+}
