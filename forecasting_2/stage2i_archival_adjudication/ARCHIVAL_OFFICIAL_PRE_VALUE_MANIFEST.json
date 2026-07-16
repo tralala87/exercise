@@ -1,0 +1,55 @@
+{
+  "created_utc": "2026-07-16",
+  "experiment": "Stage2I_AO_archival_official_M3_adjudication",
+  "status": "frozen before archived official workbook bytes are downloaded",
+  "original_pre_value_manifest_sha256": "977f3db34bdd9e45940190858889494a1bfa19d6af2e4f3d7ab3984f30cb64a9",
+  "live_official_url": "https://forecasters.org/data/m3comp/M3C.xls",
+  "official_page": "https://forecasters.org/resources/time-series-data/m3-competition/",
+  "wayback_cdx": "https://web.archive.org/cdx/search/cdx",
+  "url_variants": [
+    "https://forecasters.org/data/m3comp/M3C.xls",
+    "http://forecasters.org/data/m3comp/M3C.xls",
+    "https://www.forecasters.org/data/m3comp/M3C.xls",
+    "http://www.forecasters.org/data/m3comp/M3C.xls"
+  ],
+  "replay_template": "https://web.archive.org/web/{timestamp}id_/{original}",
+  "candidate_sources": {
+    "cran_mcomp": {
+      "url": "https://raw.githubusercontent.com/cran/Mcomp/28f4e9babfe26607c9274c2c8d0e900a6aa61eec/data/M3.rda",
+      "commit": "28f4e9babfe26607c9274c2c8d0e900a6aa61eec",
+      "expected_md5": "f420fb522d3467b7fd2f96477350202b"
+    },
+    "monash_zenodo": {
+      "Yearly": "https://zenodo.org/api/records/4656222/files/m3_yearly_dataset.zip/content",
+      "Quarterly": "https://zenodo.org/api/records/4656262/files/m3_quarterly_dataset.zip/content",
+      "Monthly": "https://zenodo.org/api/records/4656298/files/m3_monthly_dataset.zip/content",
+      "Other": "https://zenodo.org/api/records/4656335/files/m3_other_dataset.zip/content"
+    }
+  },
+  "workbook_signature_hex": "d0cf11e0a1b11ae1",
+  "sheet_counts": {
+    "M3Year": 645,
+    "M3Quart": 756,
+    "M3Month": 1428,
+    "M3Other": 174
+  },
+  "sheet_horizons": {
+    "M3Year": 6,
+    "M3Quart": 8,
+    "M3Month": 18,
+    "M3Other": 8
+  },
+  "comparison_tolerance": {
+    "rtol": 1e-12,
+    "atol": 1e-10
+  },
+  "decision_rule": "authorize exactly one candidate only if every valid archived official workbook matches it over all 3003 series and all values; otherwise block",
+  "forbidden_uses": [
+    "model tuning",
+    "threshold tuning",
+    "interval calibration",
+    "source choice based on forecasting outcomes",
+    "single-cell patching",
+    "majority vote across values"
+  ]
+}
