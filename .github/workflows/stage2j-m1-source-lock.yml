@@ -37,7 +37,7 @@ jobs:
 
       - name: Build immutable M1 source lock
         run: |
-          python forecasting_2/stage2j_tailsentry/build_m1_source_lock.py \
+          python forecasting_2/stage2j_tailsentry/build_m1_source_lock_v2.py \
             --output-root stage2j_m1_source_output \
             --pre-value forecasting_2/stage2j_tailsentry/STAGE2J_PRE_VALUE_MANIFEST.json \
             --spec forecasting_2/stage2j_tailsentry/FROZEN_STAGE2J_TAILSENTRY_SPEC.md \
