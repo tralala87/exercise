@@ -42,7 +42,7 @@ jobs:
             -o stage2k_source_output/tourism.rda \
             https://raw.githubusercontent.com/cran/Tcomp/8420cd2fcc2797d3b4ae7cc2c71dddbaf35010b7/data/tourism.rda
           echo "78a8fd28b46f657836f577b636ba70e4  stage2k_source_output/M1.rda" | md5sum -c -
-          echo "4cb8e6288b0dd6897c05d7e8be389d59  stage2k_source_output/tourism.rda" | md5sum -c -
+          echo "431f57effb90c94f9029ab50c8471646  stage2k_source_output/tourism.rda" | md5sum -c -
 
       - name: Extract exact source values
         run: |
