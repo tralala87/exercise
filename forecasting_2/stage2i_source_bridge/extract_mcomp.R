@@ -25,5 +25,7 @@ for (i in seq_along(M3)) {
 }
 values <- do.call(rbind, value_rows)
 metadata <- do.call(rbind, meta_rows)
-write.csv(values, gzfile(args[[2]], "wt"), row.names = FALSE, quote = FALSE)
+values_connection <- gzfile(args[[2]], "wt")
+write.csv(values, values_connection, row.names = FALSE, quote = FALSE)
+close(values_connection)
 write.csv(metadata, args[[3]], row.names = FALSE, quote = FALSE)
