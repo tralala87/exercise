@@ -1,0 +1,2 @@
+Trigger the corrected Stage2J M1 source-lock workflow after frozen-hash constants were aligned.
+No model, policy, gate, or source definition is changed.
