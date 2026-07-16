@@ -1,0 +1,52 @@
+name: Stage2I M3 known-snapshot adjudication
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "forecasting_2/stage2i_source_adjudication/**"
+      - ".github/workflows/stage2i-m3-known-snapshot-adjudication.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  adjudicate-known-official-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.4.3"
+          use-public-rspm: true
+      - name: Install deterministic dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "pandas<2.3" "numpy<2.1" requests xlrd
+      - name: Execute frozen known-snapshot adjudication
+        run: |
+          python forecasting_2/stage2i_source_adjudication/adjudicate_known_snapshot.py \
+            --output stage2i_m3_known_snapshot_output \
+            --manifest forecasting_2/stage2i_source_adjudication/ADJUDICATION_PRE_VALUE_MANIFEST.json \
+            --spec forecasting_2/stage2i_source_adjudication/FROZEN_STAGE2I_M3_SINGLE_CONFLICT_ADJUDICATION_SPEC.md \
+            --extractor forecasting_2/stage2i_source_adjudication/extract_mcomp.R
+      - name: Show decision
+        if: always()
+        run: cat stage2i_m3_known_snapshot_output/RUN_DECISION.json
+      - name: Upload immutable adjudication result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage2i-m3-known-snapshot-adjudication
+          path: stage2i_m3_known_snapshot_output/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 9
