@@ -1,0 +1,109 @@
+name: PandaPaw public Android toolchain bootstrap
+
+on:
+  push:
+    branches:
+      - pandapaw-toolchain-bootstrap-20260809
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-toolchain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Define verified toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/toolchain.env" <<'EOF'
+          GRADLE_VERSION=9.5.0
+          GRADLE_SHA256=553c78f50dafcd54d65b9a444649057857469edf836431389695608536d6b746
+          ANDROID_CMDLINE_REVISION=15859902
+          ANDROID_CMDLINE_SHA256=4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583
+          ANDROID_PLATFORM=android-36
+          ANDROID_BUILD_TOOLS=36.0.0
+          EOF
+          cat "$RUNNER_TEMP/toolchain.env"
+
+      - name: Download and verify Gradle
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/toolchain.env"
+          mkdir -p "$RUNNER_TEMP/pandapaw-toolchain/gradle"
+          curl --fail --location --retry 5 --retry-all-errors \
+            "https://github.com/gradle/gradle-distributions/releases/download/v${GRADLE_VERSION}/gradle-${GRADLE_VERSION}-bin.zip" \
+            --output "$RUNNER_TEMP/gradle.zip"
+          echo "${GRADLE_SHA256}  $RUNNER_TEMP/gradle.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP/pandapaw-toolchain/gradle"
+          "$RUNNER_TEMP/pandapaw-toolchain/gradle/gradle-${GRADLE_VERSION}/bin/gradle" --version
+
+      - name: Download and verify Android command-line tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/toolchain.env"
+          export ANDROID_SDK_ROOT="$RUNNER_TEMP/pandapaw-toolchain/android-sdk"
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+          curl --fail --location --retry 5 --retry-all-errors \
+            "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_REVISION}_latest.zip" \
+            --output "$RUNNER_TEMP/android-commandline-tools.zip"
+          echo "${ANDROID_CMDLINE_SHA256}  $RUNNER_TEMP/android-commandline-tools.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/android-commandline-tools.zip" -d "$RUNNER_TEMP/android-commandline-tools"
+          mv "$RUNNER_TEMP/android-commandline-tools/cmdline-tools" "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --version
+
+      - name: Install pinned Android SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/toolchain.env"
+          export ANDROID_SDK_ROOT="$RUNNER_TEMP/pandapaw-toolchain/android-sdk"
+          export ANDROID_HOME="$ANDROID_SDK_ROOT"
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;${ANDROID_PLATFORM}" \
+            "build-tools;${ANDROID_BUILD_TOOLS}" \
+            "platform-tools"
+          test -f "$ANDROID_SDK_ROOT/platforms/${ANDROID_PLATFORM}/android.jar"
+          test -x "$ANDROID_SDK_ROOT/build-tools/${ANDROID_BUILD_TOOLS}/aapt2"
+          test -x "$ANDROID_SDK_ROOT/build-tools/${ANDROID_BUILD_TOOLS}/d8"
+          test -x "$ANDROID_SDK_ROOT/build-tools/${ANDROID_BUILD_TOOLS}/apksigner"
+          test -x "$ANDROID_SDK_ROOT/build-tools/${ANDROID_BUILD_TOOLS}/zipalign"
+
+      - name: Create provenance and integrity manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "$RUNNER_TEMP/toolchain.env"
+          root="$RUNNER_TEMP/pandapaw-toolchain"
+          {
+            echo "format=pandapaw-public-toolchain-v1"
+            echo "runner_os=${RUNNER_OS}"
+            echo "runner_arch=${RUNNER_ARCH}"
+            echo "gradle_version=${GRADLE_VERSION}"
+            echo "gradle_distribution_sha256=${GRADLE_SHA256}"
+            echo "android_cmdline_revision=${ANDROID_CMDLINE_REVISION}"
+            echo "android_cmdline_sha256=${ANDROID_CMDLINE_SHA256}"
+            echo "android_platform=${ANDROID_PLATFORM}"
+            echo "android_build_tools=${ANDROID_BUILD_TOOLS}"
+            echo "generated_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } > "$root/TOOLCHAIN_PROVENANCE.txt"
+          (
+            cd "$root"
+            find . -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+          )
+          du -sh "$root"
+          find "$root" -maxdepth 3 -type d | sort
+
+      - name: Upload verified public toolchain
+        uses: actions/upload-artifact@v4
+        with:
+          name: pandapaw-android-toolchain-linux-x64
+          path: ${{ runner.temp }}/pandapaw-toolchain
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
