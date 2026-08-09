@@ -78,7 +78,7 @@ jobs:
           test -x "$ANDROID_SDK_ROOT/build-tools/${ANDROID_BUILD_TOOLS}/apksigner"
           test -x "$ANDROID_SDK_ROOT/build-tools/${ANDROID_BUILD_TOOLS}/zipalign"
 
-      - name: Create provenance and integrity manifest
+      - name: Create provenance and split verified archives
         shell: bash
         run: |
           set -euo pipefail
@@ -100,14 +100,45 @@ jobs:
             cd "$root"
             find . -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
           )
-          du -sh "$root"
-          find "$root" -maxdepth 3 -type d | sort
+          mkdir -p "$RUNNER_TEMP/split"
+          tar --zstd -cf "$RUNNER_TEMP/split/gradle-9.5.0.tar.zst" -C "$root" gradle TOOLCHAIN_PROVENANCE.txt SHA256SUMS.txt
+          tar --zstd -cf "$RUNNER_TEMP/split/android-cmdline-15859902.tar.zst" -C "$root" android-sdk/cmdline-tools TOOLCHAIN_PROVENANCE.txt SHA256SUMS.txt
+          tar --zstd -cf "$RUNNER_TEMP/split/android-sdk-api36-buildtools36.tar.zst" -C "$root" android-sdk/platforms android-sdk/build-tools android-sdk/platform-tools android-sdk/licenses TOOLCHAIN_PROVENANCE.txt SHA256SUMS.txt
+          (
+            cd "$RUNNER_TEMP/split"
+            sha256sum *.tar.zst > ARCHIVE_SHA256SUMS.txt
+          )
+          ls -lh "$RUNNER_TEMP/split"
 
-      - name: Upload verified public toolchain
+      - name: Upload Gradle component
         uses: actions/upload-artifact@v4
         with:
-          name: pandapaw-android-toolchain-linux-x64
-          path: ${{ runner.temp }}/pandapaw-toolchain
+          name: pandapaw-gradle-9.5.0-linux-x64
+          path: |
+            ${{ runner.temp }}/split/gradle-9.5.0.tar.zst
+            ${{ runner.temp }}/split/ARCHIVE_SHA256SUMS.txt
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload Android command-line component
+        uses: actions/upload-artifact@v4
+        with:
+          name: pandapaw-android-cmdline-15859902-linux-x64
+          path: |
+            ${{ runner.temp }}/split/android-cmdline-15859902.tar.zst
+            ${{ runner.temp }}/split/ARCHIVE_SHA256SUMS.txt
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload Android API/build-tools component
+        uses: actions/upload-artifact@v4
+        with:
+          name: pandapaw-android-sdk-api36-buildtools36-linux-x64
+          path: |
+            ${{ runner.temp }}/split/android-sdk-api36-buildtools36.tar.zst
+            ${{ runner.temp }}/split/ARCHIVE_SHA256SUMS.txt
           compression-level: 0
           retention-days: 1
           if-no-files-found: error
