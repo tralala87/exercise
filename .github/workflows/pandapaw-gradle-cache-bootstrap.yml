@@ -112,6 +112,7 @@ jobs:
           }
           dependencies {
               implementation(project(":capacitor-android"))
+              implementation("androidx.appcompat:appcompat:1.7.1")
               implementation("androidx.work:work-runtime:2.11.2")
           }
           EOF
@@ -188,6 +189,7 @@ jobs:
             echo "agp=9.3.0"
             echo "kotlin=2.3.21"
             echo "capacitor_android=8.4.2-local-npm-module"
+            echo "androidx_appcompat=1.7.1"
             echo "androidx_work_runtime=2.11.2"
             echo "android_platform=36"
             echo "android_build_tools=36.0.0"
