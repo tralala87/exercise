@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - name: Initialize isolated Gradle home
+      - name: Initialize isolated build homes
         shell: bash
         run: |
           set -euo pipefail
@@ -22,11 +22,11 @@ jobs:
           echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
           echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       - name: Set up Gradle 9.5.0
         uses: gradle/actions/setup-gradle@v4
@@ -44,13 +44,28 @@ jobs:
           test -f "$ANDROID_SDK_ROOT/platforms/android-36/android.jar"
           test -x "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt2"
 
+      - name: Acquire exact public Capacitor Android module
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/capacitor-npm" "$RUNNER_TEMP/capacitor-unpacked"
+          npm pack @capacitor/android@8.4.2 --pack-destination "$RUNNER_TEMP/capacitor-npm"
+          capacitor_tgz=$(find "$RUNNER_TEMP/capacitor-npm" -maxdepth 1 -type f -name '*.tgz' | head -n 1)
+          test -n "$capacitor_tgz"
+          tar -xzf "$capacitor_tgz" -C "$RUNNER_TEMP/capacitor-unpacked"
+          capacitor_project="$RUNNER_TEMP/capacitor-unpacked/package/capacitor"
+          test -f "$capacitor_project/build.gradle"
+          echo "CAPACITOR_ANDROID_PROJECT=$capacitor_project" >> "$GITHUB_ENV"
+          echo "CAPACITOR_ANDROID_TGZ=$capacitor_tgz" >> "$GITHUB_ENV"
+          sha256sum "$capacitor_tgz" | tee "$RUNNER_TEMP/capacitor-npm/CAPACITOR_ANDROID_SHA256.txt"
+
       - name: Create dependency-equivalent synthetic project
         shell: bash
         run: |
           set -euo pipefail
           root="$RUNNER_TEMP/dependency-probe"
           mkdir -p "$root/app/src/main/kotlin/cache/probe" "$root/app/src/main/assets/public" "$root/app/src/main/res/values" "$root/jvm/src/main/kotlin/cache/probe"
-          cat > "$root/settings.gradle.kts" <<'EOF'
+          cat > "$root/settings.gradle.kts" <<EOF
           pluginManagement {
               repositories { google(); mavenCentral(); gradlePluginPortal() }
           }
@@ -59,7 +74,8 @@ jobs:
               repositories { google(); mavenCentral() }
           }
           rootProject.name = "PandaPawDependencyProbe"
-          include(":app", ":jvm")
+          include(":app", ":jvm", ":capacitor-android")
+          project(":capacitor-android").projectDir = file("$CAPACITOR_ANDROID_PROJECT")
           EOF
           cat > "$root/build.gradle.kts" <<'EOF'
           plugins {
@@ -88,10 +104,14 @@ jobs:
                   versionCode = 1
                   versionName = "1"
               }
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_21
+                  targetCompatibility = JavaVersion.VERSION_21
+              }
               buildFeatures { buildConfig = false }
           }
           dependencies {
-              implementation("com.capacitorjs:android:8.4.2")
+              implementation(project(":capacitor-android"))
               implementation("androidx.work:work-runtime:2.11.2")
           }
           EOF
@@ -123,7 +143,7 @@ jobs:
           EOF
           cat > "$root/jvm/build.gradle.kts" <<'EOF'
           plugins { `java-library`; kotlin("jvm") }
-          kotlin { jvmToolchain(17) }
+          kotlin { jvmToolchain(21) }
           dependencies { testImplementation(kotlin("test")) }
           EOF
           cat > "$root/jvm/src/main/kotlin/cache/probe/Probe.kt" <<'EOF'
@@ -149,7 +169,7 @@ jobs:
           gradle --offline --no-daemon --stacktrace clean :app:assembleDebug :app:lintDebug :jvm:compileKotlin
           test -f app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Package split offline caches
+      - name: Package split offline caches and upstream module
         shell: bash
         run: |
           set -euo pipefail
@@ -161,19 +181,21 @@ jobs:
           find caches -mindepth 1 -maxdepth 1 ! -name modules-2 ! -name 'build-cache-*' -print0 | sort -z > "$RUNNER_TEMP/runtime-cache-paths"
           test -s "$RUNNER_TEMP/runtime-cache-paths"
           tar --null --zstd -cf "$out/gradle-cache-runtime.tar.zst" -T "$RUNNER_TEMP/runtime-cache-paths"
+          cp "$CAPACITOR_ANDROID_TGZ" "$out/capacitor-android-8.4.2.tgz"
           {
-            echo "format=pandapaw-gradle-offline-cache-v1"
+            echo "format=pandapaw-gradle-offline-cache-v2"
             echo "gradle=9.5.0"
             echo "agp=9.3.0"
             echo "kotlin=2.3.21"
-            echo "capacitor_android=8.4.2"
+            echo "capacitor_android=8.4.2-local-npm-module"
             echo "androidx_work_runtime=2.11.2"
             echo "android_platform=36"
             echo "android_build_tools=36.0.0"
+            echo "jdk=21"
             echo "offline_probe=passed"
             echo "generated_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           } > "$out/GRADLE_CACHE_PROVENANCE.txt"
-          (cd "$out" && sha256sum *.tar.zst > ARCHIVE_SHA256SUMS.txt)
+          (cd "$out" && sha256sum *.tar.zst *.tgz > ARCHIVE_SHA256SUMS.txt)
           du -sh "$GRADLE_USER_HOME/caches"
           ls -lh "$out"
 
@@ -195,6 +217,18 @@ jobs:
           name: pandapaw-gradle-cache-runtime
           path: |
             ${{ runner.temp }}/gradle-cache-split/gradle-cache-runtime.tar.zst
+            ${{ runner.temp }}/gradle-cache-split/GRADLE_CACHE_PROVENANCE.txt
+            ${{ runner.temp }}/gradle-cache-split/ARCHIVE_SHA256SUMS.txt
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Upload exact Capacitor Android module
+        uses: actions/upload-artifact@v4
+        with:
+          name: pandapaw-capacitor-android-8.4.2
+          path: |
+            ${{ runner.temp }}/gradle-cache-split/capacitor-android-8.4.2.tgz
             ${{ runner.temp }}/gradle-cache-split/GRADLE_CACHE_PROVENANCE.txt
             ${{ runner.temp }}/gradle-cache-split/ARCHIVE_SHA256SUMS.txt
           compression-level: 0
